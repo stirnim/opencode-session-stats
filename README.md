@@ -4,9 +4,9 @@ A TUI plugin for [OpenCode](https://opencode.ai) v2 that shows and records
 **per-session statistics**: decode and prefill rates, time to first token, where
 the time went, tool calls, tokens and context size, including sub-agents.
 
-It is built for benchmarking: judging how fast a (local) model really is in agentic
-work, and comparing agent harnesses on the same task. It measures completed requests
-from exact token counts. It does not estimate anything live while a response streams.
+This is handy for seeing how fast a (local) model really is in agentic work. It
+measures completed requests from exact token counts. It does not estimate anything
+live while a response streams.
 
 ```
 2m 05s · dec 86.8 t/s · pre 991 t/s · tools 6
