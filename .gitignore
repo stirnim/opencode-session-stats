@@ -1,0 +1,6 @@
+node_modules/
+*.log
+.DS_Store
+
+# Summaries written by /session-stats export while developing here
+session-stats-*.json

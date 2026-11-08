@@ -1,0 +1,3 @@
+[test]
+# Solid JSX transform for UI render tests (the host does this for the plugin itself).
+preload = ["@opentui/solid/preload"]
