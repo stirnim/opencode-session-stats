@@ -255,8 +255,9 @@ bun run typecheck
 | `test/fixtures/` | A recorded OpenCode run (content removed) |
 | `scripts/debug-timeline.ts` | Prints a debug event log as a per-session timeline |
 
-The repository contains `.opencode/plugins/session-stats` (a symlink to itself), so
-starting OpenCode in the repository loads the working copy.
+Install the plugin from your clone (symlink, see [Installation](#installation)) and
+OpenCode loads the working copy; restart the TUI after changes. Don't link the same
+copy both globally and into a project's `.opencode/plugins/`, or it is loaded twice.
 
 To record a new fixture, run OpenCode with `OPENCODE_SESSION_STATS_DEBUG=1`, inspect
 it with `bun scripts/debug-timeline.ts <file>`, and strip all content (prompts, text,
