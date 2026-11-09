@@ -9,7 +9,7 @@ measures completed requests from exact token counts. It does not estimate anythi
 live while a response streams.
 
 ```
-2m 05s · dec 86.8 t/s · pre 991 t/s · tools 6
+2m 05s · dec 86.8 t/s · pre 991 t/s
 ```
 
 <details>
@@ -33,7 +33,6 @@ Activity
 Model requests                     7
   not streamed                     2
 Tool calls                         6
-  failed                      0 (0%)
   read                             2
   shell                            2
   subagent                         2
@@ -90,7 +89,7 @@ Restart the TUI afterwards.
 ## Usage
 
 - **Footer** (appended to the prompt status line): wall clock, average decode rate,
-  average prefill rate, tool calls.
+  average prefill rate.
 - **Sidebar**: all statistics, with a breakdown for sub-agents. Missing values show as
   `--` (e.g. rates before the first request).
 - Stats always cover the **root session and all its sub-agents**, so they stay the same

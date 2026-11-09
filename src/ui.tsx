@@ -20,17 +20,15 @@ function valueColor(theme: ResolvedTheme, text: string, bad = false): RGBA {
   return bad ? theme.text.feedback.error.base : theme.text.base
 }
 
-/** Compact one-liner for prompt.footer.status: wall clock, decode, prefill, tool calls. */
+/** Compact one-liner for prompt.footer.status: wall clock, decode, prefill. */
 export function Footer(props: ViewProps): JSX.Element {
   const t = props.theme
-  const value = (text: () => string, bad?: () => boolean) => (
-    <span style={{ fg: valueColor(t, text(), bad?.()) }}>{text()}</span>
-  )
-  const part = (label: string, text: () => string, bad?: () => boolean) => (
+  const value = (text: () => string) => <span style={{ fg: valueColor(t, text()) }}>{text()}</span>
+  const part = (label: string, text: () => string) => (
     <>
       <span style={{ fg: t.text.faint }}> · </span>
       <span style={{ fg: t.text.muted }}>{label} </span>
-      {value(text, bad)}
+      {value(text)}
     </>
   )
   return (
@@ -40,7 +38,6 @@ export function Footer(props: ViewProps): JSX.Element {
           {value(() => duration(wallMs(s(), props.now())))}
           {part("dec", () => withUnit(rate(s().total.decodeRate), " t/s"))}
           {part("pre", () => withUnit(rate(s().total.prefillRate), " t/s"))}
-          {part("tools", () => toolSummary(s().total), () => s().total.tools.failed > 0)}
         </text>
       )}
     </Show>
@@ -48,7 +45,9 @@ export function Footer(props: ViewProps): JSX.Element {
 }
 
 const withUnit = (value: string, unit: string) => (value === MISSING ? value : value + unit)
-const toolSummary = (g: GroupStats) => (g.tools.failed > 0 ? `${g.tools.calls} (${g.tools.failed} failed)` : String(g.tools.calls))
+/** "74", or "74 (1 failed)" when some failed. */
+const withFailed = (total: number, failed: number) => (failed > 0 ? `${total} (${failed} failed)` : String(total))
+const toolSummary = (g: GroupStats) => withFailed(g.tools.calls, g.tools.failed)
 
 interface RowData {
   label: string
@@ -105,16 +104,14 @@ function rateRows(s: SessionStats): RowData[] {
 }
 
 function requestRows(g: GroupStats): RowData[] {
-  const rows: RowData[] = [{ label: "Model requests", value: String(g.requests) }]
+  const rows: RowData[] = [
+    { label: "Model requests", value: withFailed(g.requests, g.failedRequests), bad: g.failedRequests > 0 },
+  ]
   if (g.unstreamedRequests > 0) rows.push({ label: "not streamed", value: String(g.unstreamedRequests), detail: true })
-  if (g.failedRequests > 0) rows.push({ label: "failed", value: String(g.failedRequests), bad: true, detail: true })
   if (g.retries > 0) rows.push({ label: "retries", value: String(g.retries), detail: true })
-  rows.push({ label: "Tool calls", value: String(g.tools.calls) })
-  if (g.tools.calls > 0)
-    rows.push({ label: "failed", value: `${g.tools.failed} (${percent(g.tools.failureRate)})`, bad: g.tools.failed > 0, detail: true })
+  rows.push({ label: "Tool calls", value: toolSummary(g), bad: g.tools.failed > 0 })
   const byName = Object.entries(g.tools.byName).toSorted((a, b) => b[1].calls - a[1].calls)
-  for (const [name, t] of byName)
-    rows.push({ label: name, value: t.failed ? `${t.calls} (${t.failed} failed)` : String(t.calls), detail: true })
+  for (const [name, t] of byName) rows.push({ label: name, value: withFailed(t.calls, t.failed), bad: t.failed > 0, detail: true })
   return rows
 }
 
@@ -129,9 +126,9 @@ function tokenRows(g: GroupStats): RowData[] {
 function subAgentRows(g: GroupStats): RowData[] {
   return [
     { label: "Sessions", value: String(g.sessions) },
-    { label: "Requests", value: String(g.requests) },
+    { label: "Requests", value: withFailed(g.requests, g.failedRequests), bad: g.failedRequests > 0 },
     { label: "Input / output", value: `${count(g.tokens.input)} / ${count(g.tokens.output)}` },
-    { label: "Tool calls", value: String(g.tools.calls), bad: g.tools.failed > 0 },
+    { label: "Tool calls", value: toolSummary(g), bad: g.tools.failed > 0 },
     { label: "Active", value: duration(g.activeMs) },
   ]
 }

@@ -38,13 +38,13 @@ describe("views", () => {
 
   test("footer", async () => {
     const out = await frame(() => <Footer theme={theme} stats={() => stats} now={() => now} />, 80, 1)
-    expect(out).toBe("2m 05s · dec 86.8 t/s · pre 991 t/s · tools 6")
+    expect(out).toBe("2m 05s · dec 86.8 t/s · pre 991 t/s")
   })
 
   test("footer before the first request shows --", async () => {
     const empty: SessionStats = computeStats(records.filter((r) => r.type === "session"), MAIN, 0)
     const out = await frame(() => <Footer theme={theme} stats={() => empty} now={() => now} />, 80, 1)
-    expect(out).toBe("2m 05s · dec -- · pre -- · tools 0")
+    expect(out).toBe("2m 05s · dec -- · pre --")
   })
 
   test("footer renders nothing without stats", async () => {
@@ -62,9 +62,27 @@ describe("views", () => {
     expect(out).toMatch(/sub-agents\s+69\.3 t\/s/)
     expect(out).toMatch(/Cache hit\s+59%/)
     expect(out).toMatch(/  not streamed\s+2/)
-    expect(out).toMatch(/  failed\s+0 \(0%\)/)
+    expect(out).toMatch(/Model requests\s+7\n/)
+    expect(out).toMatch(/Tool calls\s+6\n/)
+    expect(out).not.toContain("failed")
     expect(out).toContain("Of which sub-agents")
     expect(out).toMatch(/Input \/ output\s+17\.1k \/ 400/)
     for (const removed of ["Time split", "Avg TTFT", "Reasoning", "Context", "Compactions", "per request"]) expect(out).not.toContain(removed)
+  })
+
+  test("sidebar shows failures in brackets instead of separate rows", async () => {
+    const failing = structuredClone(stats)
+    failing.total.failedRequests = 1
+    failing.total.tools.failed = 1
+    failing.total.tools.byName.shell!.failed = 1
+    failing.subAgents.failedRequests = 1
+    failing.subAgents.tools.failed = 1
+    const out = await frame(() => <Sidebar theme={theme} stats={() => failing} now={() => now} />, 36, 60)
+    expect(out).toMatch(/Model requests\s+7 \(1 failed\)/)
+    expect(out).toMatch(/Tool calls\s+6 \(1 failed\)/)
+    expect(out).toMatch(/  shell\s+2 \(1 failed\)/)
+    expect(out).toMatch(/Requests\s+4 \(1 failed\)/)
+    expect(out).toMatch(/Tool calls\s+2 \(1 failed\)/)
+    expect(out).not.toMatch(/^\s+failed/m)
   })
 })
