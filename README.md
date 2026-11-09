@@ -22,18 +22,11 @@ Wall clock                    2m 05s
 Active                         47.9s
 Waiting for user              1m 17s
 
-Time split
-Prefill (Σ TTFT)               13.0s
-Decode                         22.7s
-Tools                          26.4s
-Not streamed                   17.4s
-
 Rates
 Decode                      86.8 t/s
   main                      90.6 t/s
   sub-agents                69.3 t/s
 Prefill                      991 t/s
-Avg TTFT                        2.6s
 Cache hit                        59%
 
 Activity
@@ -41,7 +34,6 @@ Model requests                     7
   not streamed                     2
 Tool calls                         6
   failed                      0 (0%)
-  per request                   0.86
   read                             2
   shell                            2
   subagent                         2
@@ -49,13 +41,7 @@ Tool calls                         6
 Tokens
 Input                          28.5k
 Output                          3.1k
-  Reasoning                      n/a
 Cache read                     41.0k
-
-Context
-Current                           --
-Max                            10.4k
-Compactions                        1
 
 Of which sub-agents
 Sessions                           2
@@ -165,6 +151,8 @@ Times are Unix milliseconds (OpenCode server clock). Missing values are `null`.
 after every change: `summaryVersion`, `sessionID`, `label`, `directory`,
 `opencodeVersion`, `pluginVersion`, `startedAt`, `lastActivity`, `updatedAt` (ISO) and
 `stats` with `total`, `main` and `subAgents` (same shape each), `wallMs` and `context`.
+It contains more than the sidebar shows, e.g. the time split, average TTFT, reasoning
+tokens and context size.
 
 After a TUI restart, a resumed session's earlier JSONL is loaded again, so its summary
 continues instead of starting over.
@@ -227,8 +215,8 @@ non-zero code is a normal result, not a failure.
   request waits in its queue (e.g. behind a parallel sub-agent or the title request).
   The events can't separate this, so the prefill rate looks lower than it is.
 - Some providers don't report reasoning tokens separately (e.g. mlx-serve through the
-  OpenAI-compatible provider). The sidebar then shows `n/a`; the reasoning is part of
-  the output count.
+  OpenAI-compatible provider). The summary then sets `reasoningUnreported`; the
+  reasoning is part of the output count.
 - Whether `input` excludes cache reads for every provider is only verified for the
   OpenAI-compatible provider.
 - A resumed session's stats appear with its first new event after a TUI restart, not

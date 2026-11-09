@@ -3,7 +3,7 @@
 import type { ResolvedTheme } from "@opencode/theme/tui"
 import type { RGBA } from "@opentui/core"
 import { For, Show, type Accessor, type JSX } from "solid-js"
-import { count, decimal, duration, MISSING, percent, rate } from "./format.ts"
+import { count, duration, MISSING, percent, rate } from "./format.ts"
 import type { GroupStats, SessionStats } from "./stats.ts"
 
 interface ViewProps {
@@ -90,16 +90,6 @@ function timeRows(s: SessionStats, now: number): RowData[] {
   ]
 }
 
-function splitRows(g: GroupStats): RowData[] {
-  const rows: RowData[] = [
-    { label: "Prefill (Σ TTFT)", value: duration(g.time.ttftMs) },
-    { label: "Decode", value: duration(g.time.decodeMs) },
-    { label: "Tools", value: duration(g.time.toolMs) },
-  ]
-  if (g.time.unsplitMs > 0) rows.push({ label: "Not streamed", value: duration(g.time.unsplitMs) })
-  return rows
-}
-
 function rateRows(s: SessionStats): RowData[] {
   const g = s.total
   const rows: RowData[] = [{ label: "Decode", value: withUnit(rate(g.decodeRate), " t/s") }]
@@ -109,7 +99,6 @@ function rateRows(s: SessionStats): RowData[] {
   }
   rows.push(
     { label: "Prefill", value: withUnit(rate(g.prefillRate), " t/s") },
-    { label: "Avg TTFT", value: duration(g.avgTtftMs) },
     { label: "Cache hit", value: percent(g.cacheHitRate) },
   )
   return rows
@@ -123,7 +112,6 @@ function requestRows(g: GroupStats): RowData[] {
   rows.push({ label: "Tool calls", value: String(g.tools.calls) })
   if (g.tools.calls > 0)
     rows.push({ label: "failed", value: `${g.tools.failed} (${percent(g.tools.failureRate)})`, bad: g.tools.failed > 0, detail: true })
-  rows.push({ label: "per request", value: decimal(g.tools.perRequest), detail: true })
   const byName = Object.entries(g.tools.byName).toSorted((a, b) => b[1].calls - a[1].calls)
   for (const [name, t] of byName)
     rows.push({ label: name, value: t.failed ? `${t.calls} (${t.failed} failed)` : String(t.calls), detail: true })
@@ -134,16 +122,7 @@ function tokenRows(g: GroupStats): RowData[] {
   return [
     { label: "Input", value: count(g.tokens.input) },
     { label: "Output", value: count(g.tokens.output) },
-    { label: "Reasoning", value: g.reasoningUnreported ? "n/a" : count(g.tokens.reasoning), detail: true },
     { label: "Cache read", value: count(g.tokens.cacheRead) },
-  ]
-}
-
-function contextRows(s: SessionStats): RowData[] {
-  return [
-    { label: "Current", value: count(s.context.current) },
-    { label: "Max", value: count(s.context.max) },
-    { label: "Compactions", value: String(s.context.compactions) },
   ]
 }
 
@@ -157,7 +136,7 @@ function subAgentRows(g: GroupStats): RowData[] {
   ]
 }
 
-/** Full statistics panel for sidebar.content. */
+/** Statistics panel for sidebar.content. A subset of the recorded stats; the JSON summary has all of them. */
 export function Sidebar(props: ViewProps & { label?: () => string | undefined }): JSX.Element {
   const t = props.theme
   return (
@@ -172,11 +151,9 @@ export function Sidebar(props: ViewProps & { label?: () => string | undefined })
           </Show>
           {/* Only this block depends on the clock, so the rest doesn't re-render every second. */}
           <For each={timeRows(s(), props.now())}>{(row) => <Row theme={t} row={row} />}</For>
-          <Section theme={t} title="Time split" rows={() => splitRows(s().total)} />
           <Section theme={t} title="Rates" rows={() => rateRows(s())} />
           <Section theme={t} title="Activity" rows={() => requestRows(s().total)} />
           <Section theme={t} title="Tokens" rows={() => tokenRows(s().total)} />
-          <Section theme={t} title="Context" rows={() => contextRows(s())} />
           <Show when={s().subAgents.sessions > 0}>
             <Section theme={t} title="Of which sub-agents" rows={() => subAgentRows(s().subAgents)} />
           </Show>
